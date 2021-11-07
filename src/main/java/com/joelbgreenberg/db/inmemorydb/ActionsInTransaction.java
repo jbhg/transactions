@@ -1,14 +1,15 @@
 package com.joelbgreenberg.db.inmemorydb;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.MapMaker;
 import com.joelbgreenberg.db.IDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ActionsInTransaction implements IDatabase {
 
@@ -24,31 +25,40 @@ public class ActionsInTransaction implements IDatabase {
 
     @Override
     public void set(String name, String value) {
-        LOG.info("{}: {} {} {}", this.transactionName, "set".toUpperCase(Locale.ROOT), name, value);
+        LOG.info("{}: {} {} {}", this.transactionName, "SET", name, value);
         mappings.put(name, Optional.of(value));
     }
 
     @Override
     public Optional<String> get(String name) {
-        LOG.info("{}: {} {}", this.transactionName, "get".toUpperCase(Locale.ROOT), name);
         if (!mappings.containsKey(name)) {
+            LOG.info("{}: {} {}", this.transactionName, "GET", Optional.empty());
             return Optional.empty();
         }
+        LOG.info("{}: {} {}", this.transactionName, "GET", mappings.get(name));
         return mappings.get(name);
     }
 
     @Override
     public void delete(String name) {
+        LOG.info("{}: {} {}", this.transactionName, "DELETE", name);
         mappings.put(name, Optional.empty());
     }
 
     @Override
     public long count(String value) {
-        return mappings.values()
+        LOG.info("{}: {} {} -> {}", this.transactionName, "COUNT", value, keys(value));
+        return keys(value).size();
+    }
+
+    @Override
+    public ImmutableSet<String> keys(String value) {
+        return mappings.entrySet()
                 .stream()
-                .filter(Optional::isPresent)
-                .filter(str -> str.get().equals(value))
-                .count();
+                .filter(entry -> entry.getValue().isPresent())
+                .filter(entry -> entry.getValue().get().equals(value))
+                .map(Map.Entry::getKey)
+                .collect(ImmutableSet.toImmutableSet());
     }
 
     @Override

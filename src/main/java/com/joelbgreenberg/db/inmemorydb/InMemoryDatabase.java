@@ -1,6 +1,7 @@
 package com.joelbgreenberg.db.inmemorydb;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.joelbgreenberg.db.IDatabase;
 import com.joelbgreenberg.db.ITransactionalDatabase;
 import org.slf4j.Logger;
@@ -8,9 +9,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public class InMemoryDatabase implements ITransactionalDatabase {
 
@@ -37,10 +42,12 @@ public class InMemoryDatabase implements ITransactionalDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        return transactions.stream()
-                .filter(s -> s.get(name).isPresent())
-                .map(s -> s.get(name).get())
-                .findFirst();
+        for (ActionsInTransaction c : transactions) {
+            if (c.entryMap().containsKey(name)) {
+                return c.get(name);
+            }
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -48,15 +55,47 @@ public class InMemoryDatabase implements ITransactionalDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        transactions.getLast().delete(name);
+        transactions.getFirst().delete(name);
     }
 
     @Override
     public long count(String value) {
+        LOG.info("{} {}: {} {}", "COUNT", value,
+                transactions
+                .stream()
+                .map(ActionsInTransaction::entryMap)
+                .collect(Collectors.toList()),
+                transactions
+                        .stream()
+                        .map(a -> a.count(value))
+                        .collect(Collectors.toList()));
+
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        return transactions.getFirst().count(value);
+        Set<String> presenceKeys = new HashSet<>();
+        for (ActionsInTransaction tx : transactions) {
+            tx
+                .entryMap()
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().isPresent() && entry.getValue().get().equals(value))
+                .map(Map.Entry::getKey)
+                .forEach(presenceKeys::add);
+            tx
+                .entryMap()
+                .entrySet()
+                .stream()
+                .filter(entry -> !entry.getValue().isPresent())
+                .map(Map.Entry::getKey).collect(Collectors.toList())
+                .forEach(presenceKeys::remove);
+        }
+        return presenceKeys.size();
+    }
+
+    @Override
+    public ImmutableSet<String> keys(String value) {
+        throw new IllegalArgumentException("Not the right time to use this!");
     }
 
     @Override

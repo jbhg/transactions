@@ -1,6 +1,7 @@
 package com.joelbgreenberg.db;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.Optional;
 
@@ -44,6 +45,14 @@ public interface IDatabase {
      * @return
      */
     long count(String value);
+
+    /**
+     * Returns the keys associated with the given value.
+     *
+     * @param value
+     * @return
+     */
+    ImmutableSet<String> keys(String value);
 
     /**
      * A snapshot of the entries in the current data set.
