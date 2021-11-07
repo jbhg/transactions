@@ -1,23 +1,29 @@
 package com.joelbgreenberg.db.inmemorydb;
 
 import com.joelbgreenberg.db.IDatabase;
+import com.joelbgreenberg.db.ITransactionalDatabase;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class InMemoryDatabase implements IDatabase {
+public class InMemoryDatabase implements ITransactionalDatabase {
 
-    private final Map<String, String> values = new HashMap<>();
     private final AtomicBoolean isAcceptingCommands = new AtomicBoolean(true);
+    private final Deque<ActionsInTransaction> transactions = new ArrayDeque<>();
+
+    public InMemoryDatabase() {
+        transactions.push(new ActionsInTransaction()); // The "base" data.
+    }
 
     @Override
     public void set(String name, String value) {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        values.put(name, value);
+        transactions.getLast().set(name, value);
     }
 
     @Override
@@ -25,7 +31,10 @@ public class InMemoryDatabase implements IDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        return Optional.ofNullable(values.get(name));
+        return transactions.stream()
+                .filter(s -> s.get(name).isPresent() )
+                .map(s -> s.get(name).get())
+                .findFirst();
     }
 
     @Override
@@ -33,15 +42,15 @@ public class InMemoryDatabase implements IDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        values.remove(name);
+        transactions.getLast().delete(name);
     }
 
     @Override
-    public int count(String value) {
+    public long count(String value) {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        return (int) values.values().stream().filter(v -> v.equals(value)).count();
+        return transactions.getFirst().count(value);
     }
 
     @Override
@@ -57,6 +66,7 @@ public class InMemoryDatabase implements IDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
+        transactions.push(new ActionsInTransaction());
     }
 
     @Override
@@ -64,7 +74,11 @@ public class InMemoryDatabase implements IDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        return Optional.empty();
+        if (transactions.size() == 1) {
+            return Optional.empty();
+        }
+        transactions.pop();
+        return Optional.of(transactions.size());
     }
 
     @Override
@@ -72,5 +86,6 @@ public class InMemoryDatabase implements IDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
+        throw new NotImplementedException();
     }
 }

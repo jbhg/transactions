@@ -41,29 +41,10 @@ public interface IDatabase {
      *
      * @return
      */
-    int count(String value);
+    long count(String value);
 
     /**
      * Exits the database.
      */
     void end();
-
-    /**
-     * Begins a new transaction.
-     */
-    void beginTransaction();
-
-    /**
-     * Rolls back the most recent transaction.
-     *
-     * If there is no transaction to rollback, prints TRANSACTION NOT FOUND.
-     *
-     * (In the TRANSACTION NOT FOUND case, the result will be handled with an empty Optional.)
-     */
-    Optional<Integer> rollbackTransaction();
-
-    /**
-     * Commits all of the open transactions.
-     */
-    void commit();
 }
