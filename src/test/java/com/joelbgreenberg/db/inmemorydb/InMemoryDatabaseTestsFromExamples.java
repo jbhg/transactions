@@ -50,18 +50,18 @@ class InMemoryDatabaseTestsFromExamples {
 		IDatabase db = new InMemoryDatabase();
 		db.beginTransaction();
 		db.set("a", "foo");
-		assertThat(db.get("a"), is("foo"));
+		assertThat(db.get("a"), isPresentAndIs("foo"));
 
 		db.beginTransaction();
 		db.set("a", "bar");
-		assertThat(db.get("a"), is("bar"));
+		assertThat(db.get("a"), isPresentAndIs("bar"));
 		db.set("a", "baz");
 
 		db.rollbackTransaction();
-		assertThat(db.get("a"), is("foo"));
+		assertThat(db.get("a"), isPresentAndIs("foo"));
 
 		db.rollbackTransaction();
-		assertThat(db.get("a"), is(Optional.empty()));
+		assertThat(db.get("a"), isEmpty());
 
 		db.end();
 	}
@@ -74,23 +74,23 @@ class InMemoryDatabaseTestsFromExamples {
 		db.set("b", "baz");
 
 		db.beginTransaction();
-		assertThat(db.get("a"), is("foo"));
+		assertThat(db.get("a"), isPresentAndIs("foo"));
 		db.set("a", "bar");
 		assertThat(db.count("bar"), is(1));
 
 		db.beginTransaction();
 		assertThat(db.count("bar"), is(1));
 		db.delete("a");
-		assertThat(db.get("a"), is(Optional.empty()));
+		assertThat(db.get("a"), isEmpty());
 		assertThat(db.count("bar"), is(0));
 
 		db.rollbackTransaction();
-		assertThat(db.get("a"), is("bar"));
+		assertThat(db.get("a"), isPresentAndIs("bar"));
 		assertThat(db.count("bar"), is(1));
 
 		db.commit();
-		assertThat(db.get("a"), is("bar"));
-		assertThat(db.get("b"), is("baz"));
+		assertThat(db.get("a"), isPresentAndIs("bar"));
+		assertThat(db.get("b"), isPresentAndIs("baz"));
 
 		db.end();
 	}
