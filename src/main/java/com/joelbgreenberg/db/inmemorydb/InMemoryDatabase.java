@@ -15,13 +15,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class InMemoryDatabase implements ITransactionalDatabase {
 
     private static Logger LOG = LoggerFactory
             .getLogger(InMemoryDatabase.class);
 
+private final AtomicInteger nextTransactionId = new AtomicInteger(0);
     private final AtomicBoolean isAcceptingCommands = new AtomicBoolean(true);
     private final Deque<ActionsInTransaction> transactions = new ArrayDeque<>();
 
@@ -68,12 +69,12 @@ public class InMemoryDatabase implements ITransactionalDatabase {
         Iterator<ActionsInTransaction> iter = transactions.descendingIterator(); // need to iterate base-first.
         while ( iter.hasNext() ) {
             final ActionsInTransaction tx = iter.next();
-            presenceKeys.addAll(tx.keys(value)); // add all matches
+            presenceKeys.addAll(tx.keys(value)); // add all additions.
             tx.entryMap().entrySet()
                 .stream()
                 .filter(entry -> !entry.getValue().isPresent())
                 .map(Map.Entry::getKey)
-                .forEach(presenceKeys::remove); // then remove all removals
+                .forEach(presenceKeys::remove); // then remove all deletions.
         }
         return presenceKeys.size();
     }
@@ -102,7 +103,7 @@ public class InMemoryDatabase implements ITransactionalDatabase {
             throw new RuntimeException("This database connection is closed.");
         }
         LOG.info("BEGIN TRANSACTION");
-        transactions.push(new ActionsInTransaction("TX" + transactions.size()));
+        transactions.push(new ActionsInTransaction("TX" + nextTransactionId.incrementAndGet()));
     }
 
     @Override
@@ -123,9 +124,7 @@ public class InMemoryDatabase implements ITransactionalDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        if (transactions.size() <= 1) {
-            // nothing to commit -- there's only one base data set
-        } else {
+        while (transactions.size() > 1) {
             LOG.info("COMMIT TRANSACTION");
             IDatabase dataToCommit = transactions.pop();
             for (Map.Entry<String, Optional<String>> entry : dataToCommit.entryMap().entrySet()) {
