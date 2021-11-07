@@ -4,14 +4,12 @@ import com.google.common.collect.ImmutableList;
 import com.joelbgreenberg.db.IDatabase;
 import com.joelbgreenberg.db.ITransactionalDatabase;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAndIs;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@SpringBootTest
 class InMemoryDatabaseTestsFromExamples {
 
 	@Test

@@ -2,13 +2,11 @@ package com.joelbgreenberg.db.inmemorydb;
 
 import com.joelbgreenberg.db.ITransactionalDatabase;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAndIs;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@SpringBootTest
 public class InMemoryDatabaseTest {
 
     @Test
