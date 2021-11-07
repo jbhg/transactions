@@ -47,7 +47,7 @@ public class ActionsInTransaction implements IDatabase {
     @Override
     public long count(String value) {
         LOG.info("{}: {} {} -> {}", this.transactionName, "COUNT", value, keys(value));
-        return keys(value).size();
+        return 0;
     }
 
     @Override
