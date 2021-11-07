@@ -1,19 +1,27 @@
 package com.joelbgreenberg.db.inmemorydb;
 
+import com.google.common.collect.ImmutableMap;
+import com.joelbgreenberg.db.IDatabase;
 import com.joelbgreenberg.db.ITransactionalDatabase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class InMemoryDatabase implements ITransactionalDatabase {
 
+    private static Logger LOG = LoggerFactory
+            .getLogger(InMemoryDatabase.class);
+
     private final AtomicBoolean isAcceptingCommands = new AtomicBoolean(true);
     private final Deque<ActionsInTransaction> transactions = new ArrayDeque<>();
 
     public InMemoryDatabase() {
-        transactions.push(new ActionsInTransaction()); // The "base" data.
+        transactions.push(new ActionsInTransaction("BASE")); // The "base" data.
     }
 
     @Override
@@ -21,7 +29,7 @@ public class InMemoryDatabase implements ITransactionalDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        transactions.getLast().set(name, value);
+        transactions.getFirst().set(name, value);
     }
 
     @Override
@@ -30,7 +38,7 @@ public class InMemoryDatabase implements ITransactionalDatabase {
             throw new RuntimeException("This database connection is closed.");
         }
         return transactions.stream()
-                .filter(s -> s.get(name).isPresent() )
+                .filter(s -> s.get(name).isPresent())
                 .map(s -> s.get(name).get())
                 .findFirst();
     }
@@ -52,6 +60,11 @@ public class InMemoryDatabase implements ITransactionalDatabase {
     }
 
     @Override
+    public ImmutableMap<String, Optional<String>> entryMap() {
+        throw new IllegalArgumentException("Not the right time to use this!");
+    }
+
+    @Override
     public void end() {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
@@ -64,7 +77,8 @@ public class InMemoryDatabase implements ITransactionalDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        transactions.push(new ActionsInTransaction());
+        LOG.info("BEGIN TRANSACTION");
+        transactions.push(new ActionsInTransaction("TX" + transactions.size()));
     }
 
     @Override
@@ -75,6 +89,7 @@ public class InMemoryDatabase implements ITransactionalDatabase {
         if (transactions.size() == 1) {
             return Optional.empty();
         }
+        LOG.info("ROLLBACK TRANSACTION");
         transactions.pop();
         return Optional.of(transactions.size());
     }
@@ -84,6 +99,18 @@ public class InMemoryDatabase implements ITransactionalDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        throw new RuntimeException("Not implemented.");
+        if (transactions.size() <= 1) {
+            // nothing to commit -- there's only one base data set
+        } else {
+            LOG.info("COMMIT TRANSACTION");
+            IDatabase dataToCommit = transactions.pop();
+            for (Map.Entry<String, Optional<String>> entry : dataToCommit.entryMap().entrySet()) {
+                if (entry.getValue().isPresent()) {
+                    this.set(entry.getKey(), entry.getValue().get());
+                } else {
+                    this.delete(entry.getKey());
+                }
+            }
+        }
     }
 }

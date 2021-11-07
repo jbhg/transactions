@@ -1,5 +1,7 @@
 package com.joelbgreenberg.db;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.util.Optional;
 
 /**
@@ -42,6 +44,13 @@ public interface IDatabase {
      * @return
      */
     long count(String value);
+
+    /**
+     * A snapshot of the entries in the current data set.
+     *
+     * @return
+     */
+    ImmutableMap<String, Optional<String>> entryMap();
 
     /**
      * Exits the database.

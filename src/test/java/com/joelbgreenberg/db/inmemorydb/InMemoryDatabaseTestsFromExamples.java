@@ -16,7 +16,7 @@ class InMemoryDatabaseTestsFromExamples {
 
 	@Test
 	public void testExample1() {
-		for (IDatabase db : ImmutableList.of(new InMemoryDatabase(), new ActionsInTransaction())) {
+		for (IDatabase db : ImmutableList.of(new InMemoryDatabase(), new ActionsInTransaction("TX"))) {
 			assertThat(db.get("a"), isEmpty());
 			db.set("a", "foo");
 			db.set("b", "foo");
@@ -34,7 +34,7 @@ class InMemoryDatabaseTestsFromExamples {
 
 	@Test
 	public void testExample2() {
-		for (IDatabase db : ImmutableList.of(new InMemoryDatabase(), new ActionsInTransaction())) {
+		for (IDatabase db : ImmutableList.of(new InMemoryDatabase(), new ActionsInTransaction("TX"))) {
 
 			db.set("a", "foo");
 			db.set("a", "foo");
