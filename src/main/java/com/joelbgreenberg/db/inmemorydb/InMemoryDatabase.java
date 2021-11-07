@@ -1,8 +1,6 @@
 package com.joelbgreenberg.db.inmemorydb;
 
-import com.joelbgreenberg.db.IDatabase;
 import com.joelbgreenberg.db.ITransactionalDatabase;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -86,6 +84,6 @@ public class InMemoryDatabase implements ITransactionalDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        throw new NotImplementedException();
+        throw new RuntimeException("Not implemented.");
     }
 }
