@@ -17,6 +17,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * An in-memory database implementation.
+ */
 public class InMemoryDatabase implements ITransactionalDatabase {
 
     private static Logger LOG = LoggerFactory
@@ -30,6 +33,15 @@ private final AtomicInteger nextTransactionId = new AtomicInteger(0);
         transactions.push(new ActionsInTransaction("BASE")); // The "base" data.
     }
 
+    /**
+     * Runtime: O(1) -- setting a new value in the "top" transaction on the
+     * stack is a constant time operation.
+     *
+     * This assumes that the map's key hashing operation is a O(1) lookup.
+     *
+     * @param name
+     * @param value
+     */
     @Override
     public void set(String name, String value) {
         if (!isAcceptingCommands.get()) {
@@ -38,6 +50,15 @@ private final AtomicInteger nextTransactionId = new AtomicInteger(0);
         transactions.getFirst().set(name, value);
     }
 
+    /**
+     * Runtime: O(transaction stack count) -- looking up a value is a O(1)
+     * operation over *each* transaction in the stack.
+     *
+     * This assumes that the map's key hashing operation is a O(1) lookup.
+     *
+     * @param name
+     * @return
+     */
     @Override
     public Optional<String> get(String name) {
         if (!isAcceptingCommands.get()) {
@@ -51,6 +72,15 @@ private final AtomicInteger nextTransactionId = new AtomicInteger(0);
         return Optional.empty();
     }
 
+    /**
+     * Runtime: O(1) -- setting a new value in the "top" transaction on the
+     * stack is a constant time operation. (In this case, deletion is the same
+     * as setting the value to "empty".)
+     *
+     * This assumes that the map's key hashing operation is a O(1) lookup.
+     *
+     * @param name
+     */
     @Override
     public void delete(String name) {
         if (!isAcceptingCommands.get()) {
@@ -59,6 +89,15 @@ private final AtomicInteger nextTransactionId = new AtomicInteger(0);
         transactions.getFirst().delete(name);
     }
 
+    /**
+     * Runtime: O(transaction stack count) -- looking up a value is a O(1)
+     * operation over *each* transaction in the stack.
+     *
+     * This assumes that determining these counts is a constant operation.
+     *
+     * @param value
+     * @return
+     */
     @Override
     public long count(String value) {
         if (!isAcceptingCommands.get()) {
