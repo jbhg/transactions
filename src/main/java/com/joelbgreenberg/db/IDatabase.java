@@ -1,5 +1,8 @@
 package com.joelbgreenberg.db;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+
 import java.util.Optional;
 
 /**
@@ -41,29 +44,25 @@ public interface IDatabase {
      *
      * @return
      */
-    int count(String value);
+    long count(String value);
+
+    /**
+     * Returns the keys associated with the given value.
+     *
+     * @param value
+     * @return
+     */
+    ImmutableSet<String> keys(String value);
+
+    /**
+     * A snapshot of the entries in the current data set.
+     *
+     * @return
+     */
+    ImmutableMap<String, Optional<String>> entryMap();
 
     /**
      * Exits the database.
      */
     void end();
-
-    /**
-     * Begins a new transaction.
-     */
-    void beginTransaction();
-
-    /**
-     * Rolls back the most recent transaction.
-     *
-     * If there is no transaction to rollback, prints TRANSACTION NOT FOUND.
-     *
-     * (In the TRANSACTION NOT FOUND case, the result will be handled with an empty Optional.)
-     */
-    Optional<Integer> rollbackTransaction();
-
-    /**
-     * Commits all of the open transactions.
-     */
-    void commit();
 }

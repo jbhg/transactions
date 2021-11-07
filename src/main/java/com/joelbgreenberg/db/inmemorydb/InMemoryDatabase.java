@@ -1,23 +1,40 @@
 package com.joelbgreenberg.db.inmemorydb;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.joelbgreenberg.db.IDatabase;
+import com.joelbgreenberg.db.ITransactionalDatabase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
-public class InMemoryDatabase implements IDatabase {
+public class InMemoryDatabase implements ITransactionalDatabase {
 
-    private final Map<String, String> values = new HashMap<>();
+    private static Logger LOG = LoggerFactory
+            .getLogger(InMemoryDatabase.class);
+
     private final AtomicBoolean isAcceptingCommands = new AtomicBoolean(true);
+    private final Deque<ActionsInTransaction> transactions = new ArrayDeque<>();
+
+    public InMemoryDatabase() {
+        transactions.push(new ActionsInTransaction("BASE")); // The "base" data.
+    }
 
     @Override
     public void set(String name, String value) {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        values.put(name, value);
+        transactions.getFirst().set(name, value);
     }
 
     @Override
@@ -25,7 +42,12 @@ public class InMemoryDatabase implements IDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        return Optional.ofNullable(values.get(name));
+        for (ActionsInTransaction c : transactions) {
+            if (c.entryMap().containsKey(name)) {
+                return c.get(name);
+            }
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -33,15 +55,37 @@ public class InMemoryDatabase implements IDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        values.remove(name);
+        transactions.getFirst().delete(name);
     }
 
     @Override
-    public int count(String value) {
+    public long count(String value) {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        return (int) values.values().stream().filter(v -> v.equals(value)).count();
+
+        Set<String> presenceKeys = new HashSet<>();
+        Iterator<ActionsInTransaction> iter = transactions.descendingIterator(); // need to iterate base-first.
+        while ( iter.hasNext() ) {
+            final ActionsInTransaction tx = iter.next();
+            presenceKeys.addAll(tx.keys(value)); // add all matches
+            tx.entryMap().entrySet()
+                .stream()
+                .filter(entry -> !entry.getValue().isPresent())
+                .map(Map.Entry::getKey)
+                .forEach(presenceKeys::remove); // then remove all removals
+        }
+        return presenceKeys.size();
+    }
+
+    @Override
+    public ImmutableSet<String> keys(String value) {
+        throw new IllegalArgumentException("Not the right time to use this!");
+    }
+
+    @Override
+    public ImmutableMap<String, Optional<String>> entryMap() {
+        throw new IllegalArgumentException("Not the right time to use this!");
     }
 
     @Override
@@ -57,6 +101,8 @@ public class InMemoryDatabase implements IDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
+        LOG.info("BEGIN TRANSACTION");
+        transactions.push(new ActionsInTransaction("TX" + transactions.size()));
     }
 
     @Override
@@ -64,13 +110,31 @@ public class InMemoryDatabase implements IDatabase {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
-        return Optional.empty();
+        if (transactions.size() == 1) {
+            return Optional.empty();
+        }
+        LOG.info("ROLLBACK TRANSACTION");
+        transactions.pop();
+        return Optional.of(transactions.size());
     }
 
     @Override
     public void commit() {
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
+        }
+        if (transactions.size() <= 1) {
+            // nothing to commit -- there's only one base data set
+        } else {
+            LOG.info("COMMIT TRANSACTION");
+            IDatabase dataToCommit = transactions.pop();
+            for (Map.Entry<String, Optional<String>> entry : dataToCommit.entryMap().entrySet()) {
+                if (entry.getValue().isPresent()) {
+                    this.set(entry.getKey(), entry.getValue().get());
+                } else {
+                    this.delete(entry.getKey());
+                }
+            }
         }
     }
 }
