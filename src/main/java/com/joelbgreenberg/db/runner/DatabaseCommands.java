@@ -1,4 +1,4 @@
-package com.joelbgreenberg.db;
+package com.joelbgreenberg.db.runner;
 
 public enum DatabaseCommands {
     SET(2),

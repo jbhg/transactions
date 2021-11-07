@@ -1,9 +1,9 @@
-package com.joelbgreenberg.db.runner;
+package com.joelbgreenberg.db;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.joelbgreenberg.db.ITransactionalDatabase;
 import com.joelbgreenberg.db.inmemorydb.InMemoryDatabase;
+import com.joelbgreenberg.db.runner.DatabaseCommandMapper;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -27,6 +27,7 @@ public class MainApplication implements CommandLineRunner {
 		DatabaseCommandMapper commandMapper = new DatabaseCommandMapper(db);
 		Scanner scanner = new Scanner(System.in);
 		while (!isHalted.get()) {
+			System.out.print(">> ");
 			final String line = scanner.nextLine().trim();
 			if (line.length() == 0) {
 				continue;

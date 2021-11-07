@@ -19,6 +19,11 @@ dependencies {
 	testImplementation 'com.github.npathai:hamcrest-optional:2.0.0'
 }
 
+bootRun {
+	// Necessary for interactivity on the command line.
+	standardInput = System.in
+}
+
 test {
 	useJUnitPlatform()
 }

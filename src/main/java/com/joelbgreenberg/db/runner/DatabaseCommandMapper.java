@@ -3,7 +3,6 @@ package com.joelbgreenberg.db.runner;
 import com.google.common.base.Enums;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.joelbgreenberg.db.DatabaseCommands;
 import com.joelbgreenberg.db.ITransactionalDatabase;
 
 public class DatabaseCommandMapper {
