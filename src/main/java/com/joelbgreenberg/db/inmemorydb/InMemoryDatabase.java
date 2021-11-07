@@ -60,35 +60,20 @@ public class InMemoryDatabase implements ITransactionalDatabase {
 
     @Override
     public long count(String value) {
-        LOG.info("{} {}: {} {}", "COUNT", value,
-                transactions
-                .stream()
-                .map(ActionsInTransaction::entryMap)
-                .collect(Collectors.toList()),
-                transactions
-                        .stream()
-                        .map(a -> a.count(value))
-                        .collect(Collectors.toList()));
-
         if (!isAcceptingCommands.get()) {
             throw new RuntimeException("This database connection is closed.");
         }
+
         Set<String> presenceKeys = new HashSet<>();
-        for (ActionsInTransaction tx : transactions) {
-            tx
-                .entryMap()
-                .entrySet()
-                .stream()
-                .filter(entry -> entry.getValue().isPresent() && entry.getValue().get().equals(value))
-                .map(Map.Entry::getKey)
-                .forEach(presenceKeys::add);
-            tx
-                .entryMap()
-                .entrySet()
+        Iterator<ActionsInTransaction> iter = transactions.descendingIterator(); // need to iterate base-first.
+        while ( iter.hasNext() ) {
+            final ActionsInTransaction tx = iter.next();
+            presenceKeys.addAll(tx.keys(value)); // add all matches
+            tx.entryMap().entrySet()
                 .stream()
                 .filter(entry -> !entry.getValue().isPresent())
-                .map(Map.Entry::getKey).collect(Collectors.toList())
-                .forEach(presenceKeys::remove);
+                .map(Map.Entry::getKey)
+                .forEach(presenceKeys::remove); // then remove all removals
         }
         return presenceKeys.size();
     }
