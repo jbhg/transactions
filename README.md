@@ -7,7 +7,7 @@ An implementation of an in-memory data store with support for transactions.
 
 Assuming Docker is available locally, the project can be built with:
 
-    ./sh build.sh
+    % sh build.sh
 
 
 Then, run:
