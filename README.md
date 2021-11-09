@@ -3,6 +3,42 @@ An implementation of an in-memory data store with support for transactions.
 
 ## Start the Database
 
+### Running with Docker
+
+Assuming Docker is available locally, the project can be built with:
+
+    ./sh build.sh
+
+
+Then, run:
+
+    % sh run.sh
+
+with sample output, e.g.:
+
+```
+% sh run.sh
+>> GET a
+NULL
+>> SET a 1
+>> COUNT 1
+1
+>> END
+jbg@MacBook-Pro-3 transactions % sh run.sh
+>> GET a
+NULL
+>> SET a foo
+>> GET a
+foo
+>> SET b foo
+>> COUNT foo
+2
+>> END
+%
+```
+
+### Running with Gradle
+
 Assuming dependencies are met, this application can be run with Gradle:
 
     ./gradlew bootRun --console=plain
