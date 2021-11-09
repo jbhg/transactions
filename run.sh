@@ -1,2 +1,2 @@
 #!/bin/bash
-docker run jbhgtransactions:latest
+docker run -i -t jbhgtransactions:latest
