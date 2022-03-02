@@ -1,7 +1,6 @@
 package com.joelbgreenberg.db.inmemorydb;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static org.hamcrest.MatcherAssert.assertThat;

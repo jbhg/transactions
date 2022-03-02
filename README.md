@@ -1,122 +1,88 @@
-# Transactions Database
-An implementation of an in-memory data store with support for transactions.
+**API Endpoints:**
 
-## Start the Database
+    GET /api/jobs/{id} -- returns job details, without respect to assignment.
 
-### Running with Docker
+    GET /api/jobAssignments/{job_id}?{depth}
+        -- returns job details including assignment (if available)
 
-Assuming Docker is available locally, the project can be built with:
+    GET /api/jobAssignments/{job_id}/reports
+        -- returns job details including assignment and direct reporting jobs.
 
-    % sh build.sh
+    GET /api/jobAssignments/{job_id}/reports/{depth}
+        -- returns job details including assignment and reporting jobs at recursive depth.
+
+    PUT /api/jobAssignments/{job_id}/people/{people_id}
+        -- assign people_id entry to job with job_id.
+
+    POST /api/jobs
+    PUT /api/jobs/{id}
+    DELETE /api/jobs/{job_id}/people/{people_id}
+        -- remove person association from job, leaving it vacant.
+
+    GET /api/people/{id}
+    POST /api/people
+    PUT /api/people/{id}
+
+**Models:**
+
+OrgChartAPIController.java
+
+v
+
+OrgChartAPIService.java
+
+    JobAssignment getJobAssignment(int jobId, int depth) {
+        final Job job = jobRepository.getById(jobId); // TODO: populate details of associated person if present
+        final List<JobAssignment> directReports = jobRepository.getByReportsTo(jobId).stream().map(job -> new JobAssignment(job)).collectors.toList();
+
+        return new JobAssignment(job, directReports)
 
 
-Then, run:
+        // look up job and its associated person; assign to job.
+        // then, look up all jobs for which job is the direct parent; populate these (with associated person) to directReports.
+        // populate each JobAssignment in directReports "recursively" until depth is exhausted.
+    }
+    
+v
 
-    % sh run.sh
+OrgChartManager.java implements IOrgChartManager
 
-with sample output, e.g.:
+JobAssignment.java
+    - Job job (which includes the assigned person)
+    - Collection<JobAssignment> directReports 
+    
 
-```
-% sh run.sh
->> GET a
-NULL
->> SET a 1
->> COUNT 1
-1
->> END
-jbg@MacBook-Pro-3 transactions % sh run.sh
->> GET a
-NULL
->> SET a foo
->> GET a
-foo
->> SET b foo
->> COUNT foo
-2
->> END
-%
-```
+Job.java:
 
-### Running with Gradle
+    [INDEXED] id int unique autoincrement
+    department varchar (but in the future this might be a fk to a row in a table)
+    job_title varchar
+    [INDEXED] reports_to int references another job (optional)
+    [INDEXED] people_id int references person who holds this job (optional -- might be vacant)
+        Optional<Person> instead of Person (nullable)
 
-Assuming dependencies are met, this application can be run with Gradle:
+JobRepository.java (somewhat delegates to Spring's builtin JDBC framework, also uses PersonRepository for some calls)
 
-    ./gradlew bootRun --console=plain
+    Will need to include some tranactionally-safe calls to the Spring Repository code.
 
-A sample run might look like:
+Person.java:
 
-```
-% ./gradlew bootRun --console=plain 
-> Task :compileJava
-> Task :processResources UP-TO-DATE
-> Task :classes
-> Task :bootRunMainClassName
+    [INDEXED] id int unique autoincrement
+    firstname varchar
+    lastname varchar
+    startdate date
 
-> Task :bootRun
+PersonRepository.java (mostly delegates to Spring's builtin JDBC framework)
 
-  .   ____          _            __ _ _
- /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
-( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
- \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
-  '  |____| .__|_| |_|_| |_\__, | / / / /
- =========|_|==============|___/=/_/_/_/
- :: Spring Boot ::                (v2.5.6)
 
->> GET a
-NULL
->> SET a foo
->> GET a
-foo
->> SET b foo
->> COUNT foo
-2
->> END
+**Procedures**
 
-BUILD SUCCESSFUL in 38s
-4 actionable tasks: 3 executed, 1 up-to-date
+_Assign person to new job_
+    
+    Job assignPersonToJob(int personId, int jobId) throws IllegalJobAssignmentException;
 
-```
+   - If job is not vacant, fail because we don't know what to do with the person already in that job.
+   - If person has a job assignment already, make it vacant.
+   - Then, assign person to job.
 
-## Commands
-
-SETs the name in the database to the given value.
-
-    SET [name] [value]
-
-GETs and prints the value for the given name. If the value is not in the database, prints NULL.
-
-    GET [name]
-
-DELETEs the value from the database.
-
-    DELETE [name]
-
-Returns the number of `name`s that have the given `value` assigned to them. If that `value` is not assigned anywhere, prints 0.
-
-    COUNT [value]
-
-Exits the database.
-
-    END
-
-Begins a new transaction.
-
-    BEGIN
-
-Rolls back the most recent transaction. If there is no transaction to rollback, prints `TRANSACTION NOT FOUND`.
-
-    ROLLBACK
-
-Commits *all of the* open transactions.
-
-    COMMIT
-
-## Dependencies
-
-This is a Java 8 application that uses Gradle to manage tasks and dependencies.
-
-## Testing
-
-Automated tests can be run with:
-
-    ./gradlew test
+3. 
