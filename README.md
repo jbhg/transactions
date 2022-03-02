@@ -33,10 +33,14 @@ OrgChartAPIService.java
 
     JobAssignment getJobAssignment(int jobId, int depth) {
         final Job job = jobRepository.getById(jobId); // TODO: populate details of associated person if present
-        final List<JobAssignment> directReports = jobRepository.getByReportsTo(jobId).stream().map(job -> new JobAssignment(job)).collectors.toList();
 
-        return new JobAssignment(job, directReports)
+        // final List<JobAssignment> directReports = jobRepository.getByReportsTo(jobId).stream().map(job -> new JobAssignment(job)).collectors.toList();
 
+        final List<JobAssignment> directReports = depth > 0 ?
+            jobRepository.getByReportsTo(jobId).stream().map(childJob -> getJobAssignment(childJob.id, depth - 1)).collectors.toList() :
+            ImmutableList.empty();
+
+        return new JobAssignment(job, directReports);
 
         // look up job and its associated person; assign to job.
         // then, look up all jobs for which job is the direct parent; populate these (with associated person) to directReports.
