@@ -1,122 +1,21 @@
-# Transactions Database
-An implementation of an in-memory data store with support for transactions.
+- A job is represented by a series of date-stamped "change" objects
+- Changes can have one of 5 types:
+  - "CREATE"  -- indicates when job was created
+  - "HIRE"    -- person starts job, job goes from open => filled
+  - "UPDATE"  -- updates the job's attributes (eg. manager, compensation, custom fields)
+  - "DEPART"  -- person departs job, job goes from filled => open
+  - "DELETE"  -- job deleted from system
 
-## Start the Database
+- Only changes with an ACTIVE status should be considered
+- Changes are not stored in order
+- A person is represented separately in a canonical object with no time series component
 
-### Running with Docker
+==============================
 
-Assuming Docker is available locally, the project can be built with:
+1. What is the base salary of the job with ID "5a13d80dcfed7957fe6c04a5" on May 5th, 2019?
 
-    % sh build.sh
+2. What does Samson Oren's job look like on April 30th, 2019?
 
+3. How many open jobs exist on March 4th, 2018?
 
-Then, run:
-
-    % sh run.sh
-
-with sample output, e.g.:
-
-```
-% sh run.sh
->> GET a
-NULL
->> SET a 1
->> COUNT 1
-1
->> END
-jbg@MacBook-Pro-3 transactions % sh run.sh
->> GET a
-NULL
->> SET a foo
->> GET a
-foo
->> SET b foo
->> COUNT foo
-2
->> END
-%
-```
-
-### Running with Gradle
-
-Assuming dependencies are met, this application can be run with Gradle:
-
-    ./gradlew bootRun --console=plain
-
-A sample run might look like:
-
-```
-% ./gradlew bootRun --console=plain 
-> Task :compileJava
-> Task :processResources UP-TO-DATE
-> Task :classes
-> Task :bootRunMainClassName
-
-> Task :bootRun
-
-  .   ____          _            __ _ _
- /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
-( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
- \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
-  '  |____| .__|_| |_|_| |_\__, | / / / /
- =========|_|==============|___/=/_/_/_/
- :: Spring Boot ::                (v2.5.6)
-
->> GET a
-NULL
->> SET a foo
->> GET a
-foo
->> SET b foo
->> COUNT foo
-2
->> END
-
-BUILD SUCCESSFUL in 38s
-4 actionable tasks: 3 executed, 1 up-to-date
-
-```
-
-## Commands
-
-SETs the name in the database to the given value.
-
-    SET [name] [value]
-
-GETs and prints the value for the given name. If the value is not in the database, prints NULL.
-
-    GET [name]
-
-DELETEs the value from the database.
-
-    DELETE [name]
-
-Returns the number of `name`s that have the given `value` assigned to them. If that `value` is not assigned anywhere, prints 0.
-
-    COUNT [value]
-
-Exits the database.
-
-    END
-
-Begins a new transaction.
-
-    BEGIN
-
-Rolls back the most recent transaction. If there is no transaction to rollback, prints `TRANSACTION NOT FOUND`.
-
-    ROLLBACK
-
-Commits *all of the* open transactions.
-
-    COMMIT
-
-## Dependencies
-
-This is a Java 8 application that uses Gradle to manage tasks and dependencies.
-
-## Testing
-
-Automated tests can be run with:
-
-    ./gradlew test
+4. How many people report up to Samson Oren on June 15th, 2018?
