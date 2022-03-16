@@ -5,17 +5,22 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.joelbgreenberg.highnote.authrules.IProcessingRule;
 import com.joelbgreenberg.highnote.authrules.declined.ApproveIfNotExpired;
+import com.joelbgreenberg.highnote.authrules.declined.ApproveIfSufficientBalance;
 import com.joelbgreenberg.highnote.authrules.declined.ApproveIfZipAbsentAndAmountLessThan100;
 import com.joelbgreenberg.highnote.authrules.declined.ApproveIfZipProvidedAndAmountLessThan200;
 import com.joelbgreenberg.highnote.dataelement.DataType;
+import com.joelbgreenberg.highnote.dataelement.InputMessage;
 import com.joelbgreenberg.highnote.fieldprocessor.DataTypeAlpha;
 import com.joelbgreenberg.highnote.fieldprocessor.DataTypeLLVAR;
 import com.joelbgreenberg.highnote.fieldprocessor.DataTypeNumeric;
 import com.joelbgreenberg.highnote.fieldprocessor.IHighnoteFieldProcessor;
 
 import java.time.YearMonth;
-import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toSet;
 
 public class Configuration {
     public static final ImmutableSet<DataType> REQUIRED_FIELDS = ImmutableSet.of(
@@ -24,7 +29,8 @@ public class Configuration {
             DataType.TransactionAmountCents
     );
 
-    public static final Function<YearMonth, ImmutableSet<IProcessingRule>> BUSINESS_RULES_TO_TEST = (expiry) -> ImmutableSet.of(
+    public static final BiFunction<YearMonth, Integer, ImmutableSet<IProcessingRule>> BUSINESS_RULES_TO_TEST = (expiry, currentBalanceCents) -> ImmutableSet.of(
+            new ApproveIfSufficientBalance(currentBalanceCents),
             new ApproveIfNotExpired(expiry),
             new ApproveIfZipProvidedAndAmountLessThan200(),
             new ApproveIfZipAbsentAndAmountLessThan100()

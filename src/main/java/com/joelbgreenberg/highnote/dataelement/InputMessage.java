@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 public class InputMessage {
 
@@ -48,7 +49,7 @@ public class InputMessage {
     public String serializeToString() {
         return Joiner.on("").join(ImmutableList.of(
                 this.messageType.getCode(),
-                ByteHexUtils.bytesToHex(FieldsBitMap.from((ImmutableSet<Integer>) this.data.keySet().stream().map(DataType::getBit).collect(collectingAndThen(toList(), ImmutableSet::copyOf))).getBitmap())
+                ByteHexUtils.bytesToHex(FieldsBitMap.from((ImmutableSet<Integer>) this.data.keySet().stream().map(DataType::getBit).collect(collectingAndThen(toSet(), ImmutableSet::copyOf))).getBitmap())
         )) + Joiner.on("").join(Configuration.ORDERED_INDEXES.stream()
                 .filter(idx -> DataType.fromBit(idx).isPresent() && this.data.containsKey(DataType.fromBit(idx).get()))
                 .map(idx -> Pair.of(idx, DataType.fromBit(idx)))
