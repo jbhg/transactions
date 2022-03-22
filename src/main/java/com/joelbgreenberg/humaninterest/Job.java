@@ -1,4 +1,4 @@
-package com.joelbgreenberg.charthop;
+package com.joelbgreenberg.humaninterest;
 
 public class Job {
     private String title;

@@ -1,4 +1,4 @@
-package com.joelbgreenberg.charthop;
+package com.joelbgreenberg.humaninterest;
 
 import java.time.Instant;
 

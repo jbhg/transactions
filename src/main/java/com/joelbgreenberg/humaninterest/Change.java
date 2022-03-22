@@ -1,8 +1,12 @@
-package com.joelbgreenberg.charthop;
+package com.joelbgreenberg.humaninterest;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.time.Instant;
 import java.util.Date;
 
+@JsonIgnoreProperties(ignoreUnknown = true )
 public class Change {
 
     private String id;
