@@ -1,6 +1,9 @@
 # Transactions Database
 An implementation of an in-memory data store with support for transactions.
 
+
+Just some new text, is all.
+
 ## Start the Database
 
 ### Running with Docker
